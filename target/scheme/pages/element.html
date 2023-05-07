@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<body background="">
+<style>
+    .el-table .warning-row {
+        background: oldlace;
+    }
+
+    .el-table .success-row {
+        background: #f0f9eb;
+    }
+    body
+    {
+        /*设置布局*/
+        display:flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+</style>
+
+
+<div id="app">
+    <!--<el-button type="primary" :loading="true">加载中</el-button>-->
+    <el-row>
+        <el-button type="primary" round @click="save">Sign</el-button>
+        <el-button type="success" round @click="renzheng">Verify</el-button>
+    </el-row>
+
+    <el-dialog title="发送消息" :visible.sync="dialog1FormVisible">
+        <el-form :model="dept1">
+            <el-form-item label="对方身份" :label-width="formLabelWidth">
+                <el-input v-model="dept1.name" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="要发送的消息" :label-width="formLabelWidth">
+                <el-input v-model="dept1.pk1" autocomplete="off"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialog1FormVisible = false">取 消</el-button>
+            <el-button type="primary" @click="send();dialog1FormVisible = false">确 定</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<script src="../js/axios-0.18.0.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+
+<script>
+    new Vue({
+        el:"#app",
+        mounted(){
+            //当页面加载完成后，发送异步请求
+
+        },
+        methods: {
+
+            getAll(){
+                axios.get("/SSM_war/dept").then((res)=>{
+                    if (res.data.code === 20041) {
+                        this.tableData=res.data.data;
+
+                    }
+                });
+            },
+            save(){
+                axios.get("/scheme_war/vehicle").then((res)=>{
+                    if (res.data.code == 20011) {
+                        this.a=1;
+                        this.$message({
+                            type: 'success',
+                            message: '签名生成成功!'
+                        });
+                    }
+                });
+            },
+            renzheng(){
+                    axios.post("/scheme_war/vehicle",this.dept1).then((res)=>{
+                        if (res.data.code == 20041) {
+                            this.b=1;
+                            this.$message({
+                                type: 'success',
+                                message: '认证成功!'
+                            });
+                        }
+                    }).catch(()=>{
+                        this.$message({
+                            type: 'error',
+                            message: '认证失败!'
+                        });
+                    });
+
+            },
+            send(){
+                if(this.a==1&&this.b==1){
+                    axios.put("/scheme_war/vehicle",this.dept1).then((res)=>{
+                        if (res.data.code == 20031) {
+                            this.$message({
+                                type: 'success',
+                                message: '消息发送成功!'
+                            });
+                        }
+                    }).catch(()=>{
+                        this.$message({
+                            type: 'error',
+                            message: '消息发送失败!'
+                        });
+                    });
+                }
+                else{
+                    this.$message({
+                        type: 'error',
+                        message: '用户没有注册或没有进行身份认证，消息发送失败!'
+                    });
+                }
+            },
+            handleDangerChange(row){
+                this.$confirm("是否删除？","提示",{
+                    type:'info'
+                }).then(()=>{
+
+                    this.dept3=row;
+                    axios.delete("/SSM_war/dept/"+this.dept3.id).then((resp)=>{
+                        if (resp.data.code == 20021) {
+                            this.getAll();
+                            this.$message({
+                                type: 'success',
+                                message: '删除成功!'
+                            });
+                        }
+                    });
+                }).catch(()=>{
+                    this.$message({
+                        type: 'error',
+                        message: '删除失败!'
+                    });
+                });
+            },
+            handlesuccessChange(row) {
+                this.dept2 = row;
+            },
+            updatebyid(){
+                axios.put("/SSM_war/dept",this.dept2).then((resp)=>{
+                    if (resp.data.code == 20031) {
+                        this.getAll();
+                        this.$message({
+                            type: 'success',
+                            message: '修改成功!'
+                        });
+                    }
+                })
+            },
+            tableRowClassName({row, rowIndex}) {
+                if (rowIndex === 1) {
+                    return 'warning-row';
+                } else if (rowIndex === 3) {
+                    return 'success-row';
+                }
+                return '';
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection=val;
+                console.log(this.multipleSelection);
+            },
+            deleteAll(){
+                for (let i = 0; i < this.multipleSelection.length; i++) {
+                    this.selections[i]=this.multipleSelection[i].id;
+                }
+                console.log(this.selections)
+                for (let i = 0; i < this.selections.length; i++) {
+                    axios.delete("/SSM_war/dept/"+this.selections[i]).then((resp)=>{
+                        if (i==this.selections.length-1) {
+                            this.getAll();
+                            this.$message({
+                                type: 'success',
+                                message: '删除成功!'
+                            });
+                        }
+                    });
+                }
+
+                }
+
+        },
+        data() {
+
+            //数据总条目
+            //多选框数据
+
+
+
+            return {
+                multipleSelection: [],
+                selections: [],
+                page:100,
+                //表格数据,名字要和实体类累名相同
+                tableData: [{
+                    id:'',
+                    name:'',
+                    addr:''
+                }],
+                tableData1: [{
+                    id:'',
+                    name:'',
+                    addr:''
+                }],
+                //搜索框数据
+                dept: {
+                    name: '',
+                    addr: ''
+                },
+                //新增数据弹出框
+                dept1: {
+                    id:'',
+                    name: '',
+                    pk1:'',
+                    pk2:'',
+                    sk1:'',
+                    sk2:''
+                },
+                //修改数据
+                dept2: {
+                    name: '',
+                    addr: '',
+                    id: ''
+                },
+                dept3:{
+                    name: '',
+                    addr: '',
+                    id: ''
+                },
+                list:[
+                    {
+                        name: '',
+                        addr: '',
+                        id: ''
+                    }
+
+                ],
+                dialogFormVisible: false,
+                dialog1FormVisible: false,
+                formLabelWidth: '120px',
+                //默认页码
+                currentPage: 1,
+                //默认每页显示的条数
+                currentSize:5,
+                xgFormVisible: false,
+                a:0,
+                b:0
+            }
+
+        }
+
+    })
+</script>
+
+</body>
+</html>
